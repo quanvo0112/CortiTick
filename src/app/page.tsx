@@ -73,7 +73,7 @@ function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-bold tracking-tight">Settings</h2>
-          <button id="settings-close" onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors" style={{ color: "var(--ct-muted)" }}>
+          <button id="settings-close" onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center ct-icon-btn transition-colors" style={{ color: "var(--ct-muted)" }}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -88,14 +88,14 @@ function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }
             <div key={label} className="flex items-center justify-between">
               <span className="text-sm" style={{ color: "var(--ct-text)" }}>{label}</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => set(Math.max(min, value - 1))} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs font-bold transition-colors">−</button>
+                <button onClick={() => set(Math.max(min, value - 1))} className="w-6 h-6 rounded-full ct-btn flex items-center justify-center text-xs font-bold transition-colors">−</button>
                 <input
                   type="number" value={value} min={min} max={max}
                   onChange={(e) => set(Number(e.target.value))}
                   className={inputCls}
                   style={{ background: "var(--ct-input-bg)", borderColor: "var(--ct-input-bd)", color: "var(--ct-text)" }}
                 />
-                <button onClick={() => set(Math.min(max, value + 1))} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs font-bold transition-colors">+</button>
+                <button onClick={() => set(Math.min(max, value + 1))} className="w-6 h-6 rounded-full ct-btn flex items-center justify-center text-xs font-bold transition-colors">+</button>
                 <span className="text-xs" style={{ color: "var(--ct-muted)" }}>min</span>
               </div>
             </div>
@@ -136,8 +136,11 @@ function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }
 
 function CortisolChart() {
   const stressLevel = useStore((s) => s.stressLevel);
+  const theme = useStore((s) => s.theme);
   const pct = Math.round(stressLevel * 100);
   const hue = Math.round((1 - stressLevel) * 120);
+  const lumVal = theme === "light" ? "45%" : "65%";
+  const lumLbl = theme === "light" ? "35%" : "55%";
   const cx = 100, cy = 108, ro = 80, ri = 50, gap = 2.5;
   const step = 180 / SEGS.length;
   const needleDeg = 180 + stressLevel * 180;
@@ -163,21 +166,21 @@ function CortisolChart() {
           const p = polar(cx, cy, ro + 14, deg);
           return (
             <text key={label} x={p.x} y={p.y} textAnchor={anchor} dominantBaseline="middle"
-              fontSize="7.5" fontWeight="700" letterSpacing="0.8" fill="rgba(255,255,255,0.45)" fontFamily="sans-serif">
+              fontSize="7.5" fontWeight="700" letterSpacing="0.8" fill="var(--ct-muted)" fontFamily="sans-serif">
               {label}
             </text>
           );
         })}
         <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${needleDeg}deg)`, transition: "transform 0.6s cubic-bezier(0.34,1.56,0.64,1)" }}>
-          <polygon points={`${cx},${cy - 3.5} ${cx + 72},${cy} ${cx},${cy + 3.5}`} fill="#e2e8f0" filter="url(#ns)" />
-          <polygon points={`${cx},${cy - 2.5} ${cx - 14},${cy} ${cx},${cy + 2.5}`} fill="#94a3b8" />
+          <polygon points={`${cx},${cy - 3.5} ${cx + 72},${cy} ${cx},${cy + 3.5}`} fill="var(--ct-needle-main)" filter="url(#ns)" />
+          <polygon points={`${cx},${cy - 2.5} ${cx - 14},${cy} ${cx},${cy + 2.5}`} fill="var(--ct-needle-tail)" />
         </g>
-        <circle cx={cx} cy={cy} r={10} fill="#1e1b4b" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
-        <circle cx={cx} cy={cy} r={5}  fill="#a78bfa" />
+        <circle cx={cx} cy={cy} r={10} fill="var(--ct-bg)" stroke="var(--ct-border)" strokeWidth="1.5" />
+        <circle cx={cx} cy={cy} r={5}  fill="var(--ct-accent-1)" />
       </svg>
       <div className="flex flex-col items-center -mt-1">
-        <span className="text-3xl font-bold tabular-nums leading-none" style={{ color: `hsl(${hue},80%,65%)` }}>{pct}%</span>
-        <span className="text-[10px] font-semibold uppercase tracking-widest mt-0.5" style={{ color: `hsl(${hue},70%,55%)` }}>{stressLabel} Stress</span>
+        <span className="text-3xl font-bold tabular-nums leading-none" style={{ color: `hsl(${hue},80%,${lumVal})` }}>{pct}%</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest mt-0.5" style={{ color: `hsl(${hue},70%,${lumLbl})` }}>{stressLabel} Stress</span>
       </div>
     </div>
   );
@@ -208,7 +211,7 @@ function Timer() {
 
   const total  = mode === "work" ? workDuration : breakDuration;
   const prog   = ((total - timeLeft) / total) * 100;
-  const accent = mode === "work" ? "#a78bfa" : "#34d399";
+  const accent = mode === "work" ? "var(--ct-work-accent)" : "var(--ct-break-accent)";
 
   return (
     <div className="flex flex-col items-center gap-5">
@@ -217,7 +220,7 @@ function Timer() {
         {(["work", "break"] as const).map((m) => (
           <button key={m} id={`timer-mode-${m}`} onClick={() => { clearTick(); setMode(m); }}
             className="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
-            style={mode === m ? { background: "rgba(255,255,255,0.15)", color: "#fff" } : { color: "var(--ct-muted)" }}>
+            style={mode === m ? { background: "var(--ct-active-bg)", color: "var(--ct-active-text)" } : { color: "var(--ct-muted)" }}>
             {m === "work" ? "Work" : "Break"}
           </button>
         ))}
@@ -226,7 +229,7 @@ function Timer() {
       {/* Ring with progress */}
       <div className="relative" style={{ width: 180, height: 180 }}>
         <svg className="absolute inset-0 -rotate-90" width="180" height="180">
-          <circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+          <circle cx="90" cy="90" r="82" fill="none" stroke="var(--ct-ring-bg)" strokeWidth="8" />
           <circle cx="90" cy="90" r="82" fill="none" stroke={accent} strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 82}`}
@@ -246,8 +249,8 @@ function Timer() {
           {isRunning ? "Pause" : "Start"}
         </button>
         <button id="timer-reset" onClick={() => { clearTick(); resetTimer(); }}
-          className="px-4 py-2 rounded-full text-sm font-medium transition-all hover:bg-white/10"
-          style={{ background: "var(--ct-input-bg)", color: "var(--ct-muted)" }}>
+          className="px-4 py-2 rounded-full text-sm font-medium transition-all ct-btn"
+          style={{ color: "var(--ct-muted)" }}>
           Reset
         </button>
       </div>
@@ -292,7 +295,8 @@ function TodoList() {
                   className="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
                   style={{ background: "var(--ct-input-bg)", border: "1px solid var(--ct-input-bd)", opacity: task.completed ? 0.55 : 1 }}>
                   <button id={`task-toggle-${task.id}`} onClick={() => toggleTask(task.id)}
-                    className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${task.completed ? "bg-emerald-500 border-emerald-500" : "border-white/30 hover:border-violet-400"}`}>
+                    className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${task.completed ? "bg-emerald-500 border-emerald-500" : "border-transparent hover:border-violet-400"}`}
+                    style={{ borderColor: task.completed ? "" : "var(--ct-border)" }}>
                     {task.completed && <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clipRule="evenodd" /></svg>}
                   </button>
                   <span className={`flex-1 text-sm ${task.completed ? "line-through" : ""}`} style={{ color: task.completed ? "var(--ct-dim)" : "var(--ct-text)" }}>{task.title}</span>
@@ -308,7 +312,7 @@ function TodoList() {
         )}
         {tasks.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16" style={{ color: "var(--ct-dim)" }}>
-            <svg className="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            <svg className="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
             <p className="text-sm">No tasks yet</p>
           </div>
         )}
@@ -353,13 +357,13 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeWidth="2" d="M12 7v5l3 3" />
                 </svg>
               </div>
-              <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-violet-300 to-fuchsia-400 bg-clip-text text-transparent">CortiTick</span>
+              <span className="text-lg font-bold tracking-tight ct-gradient-text">CortiTick</span>
             </div>
             <div className="flex items-center gap-3">
               <StressBadge />
               {/* Settings button */}
               <button id="open-settings" onClick={() => setSettingsOpen(true)}
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center ct-icon-btn transition-colors"
                 style={{ border: "1px solid var(--ct-border)", color: "var(--ct-muted)" }}
                 aria-label="Open settings">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

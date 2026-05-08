@@ -82,10 +82,10 @@ export const useStore = create<CortiTickState>((set) => ({
       // Session complete – switch modes
       if (s.mode === "work") {
         const timeLeft = s.breakDuration;
-        return { timeLeft, isRunning: false, mode: "break", stressLevel: computeStress("break", timeLeft, s.workDuration, s.breakDuration) };
+        return { timeLeft, isRunning: true, mode: "break", stressLevel: computeStress("break", timeLeft, s.workDuration, s.breakDuration) };
       } else {
         const timeLeft = s.workDuration;
-        return { timeLeft, isRunning: false, mode: "work", stressLevel: computeStress("work", timeLeft, s.workDuration, s.breakDuration) };
+        return { timeLeft, isRunning: true, mode: "work", stressLevel: computeStress("work", timeLeft, s.workDuration, s.breakDuration) };
       }
     }),
 
