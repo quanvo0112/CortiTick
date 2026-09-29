@@ -38,6 +38,8 @@ interface CortiTickState {
 
   // Todos
   tasks: Task[];
+  activeTaskId: string | null;
+  setActiveTaskId: (id: string | null) => void;
   addTask: (title: string) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
@@ -114,12 +116,17 @@ export const useStore = create<CortiTickState>((set) => ({
     }),
 
   tasks: [],
+  activeTaskId: null,
+  setActiveTaskId: (id) => set({ activeTaskId: id }),
   addTask: (title) =>
     set((s) => ({ tasks: [...s.tasks, { id: uuidv4(), title: title.trim(), completed: false }] })),
   toggleTask: (id) =>
     set((s) => ({ tasks: s.tasks.map((t) => t.id === id ? { ...t, completed: !t.completed } : t) })),
   deleteTask: (id) =>
-    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
+    set((s) => ({
+      tasks: s.tasks.filter((t) => t.id !== id),
+      activeTaskId: s.activeTaskId === id ? null : s.activeTaskId,
+    })),
 
   theme: "dark",
   setTheme: (theme) => set({ theme }),

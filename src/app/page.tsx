@@ -11,26 +11,6 @@ function fmt(s: number) {
   return `${Math.floor(s / 60).toString().padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 }
 
-function polar(cx: number, cy: number, r: number, deg: number) {
-  const rad = (deg * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
-function segPath(cx: number, cy: number, ro: number, ri: number, a0: number, a1: number) {
-  const f = (n: number) => n.toFixed(3);
-  const os = polar(cx, cy, ro, a0), oe = polar(cx, cy, ro, a1);
-  const is = polar(cx, cy, ri, a0), ie = polar(cx, cy, ri, a1);
-  return `M${f(os.x)} ${f(os.y)} A${ro} ${ro} 0 0 1 ${f(oe.x)} ${f(oe.y)} L${f(ie.x)} ${f(ie.y)} A${ri} ${ri} 0 0 0 ${f(is.x)} ${f(is.y)}Z`;
-}
-
-const SEGS = [
-  { color: "#10b981", label: "LOW" },
-  { color: "#84cc16", label: "LOW" },
-  { color: "#f59e0b", label: "NORMAL" },
-  { color: "#f97316", label: "NORMAL" },
-  { color: "#f43f5e", label: "HIGH" },
-];
-
 // ─── Theme Applicator ───────────────────────────────────────────────────────
 
 function ThemeApplicator() {
@@ -41,7 +21,7 @@ function ThemeApplicator() {
   return null;
 }
 
-// ─── Settings Modal (Preferences) ───────────────────────────────────────────
+// ─── Settings Modal (Preferences & Calibrations) ─────────────────────────────
 
 function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { workDuration, breakDuration, theme, setWorkDuration, setBreakDuration, setTheme } = useStore();
@@ -63,211 +43,112 @@ function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }
     onClose();
   };
 
-  const inputCls = "w-20 text-center rounded-xl px-2 py-1.5 text-sm font-bold border outline-none focus:ring-2 focus:ring-amber-500/50 transition-colors";
+  const inputCls = "w-16 text-center rounded-lg px-2 py-1 text-xs font-bold border outline-none font-mono focus:ring-1 focus:ring-amber-500 transition-colors";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 backdrop-blur-md" style={{ background: "var(--ct-overlay)" }} onClick={onClose} />
       <div
-        className="relative rounded-3xl p-6 sm:p-7 w-full max-w-sm shadow-2xl transition-all"
-        style={{ background: "var(--ct-modal)", border: "1px solid var(--ct-border)", color: "var(--ct-text)" }}
+        className="relative rounded-2xl p-6 w-full max-w-sm shadow-2xl transition-all border border-white/[0.12]"
+        style={{ background: "var(--ct-modal)", color: "var(--ct-text)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between pb-3.5 mb-5 border-b border-white/[0.08]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 font-bold">
+              ⚙
             </div>
             <div>
-              <h2 className="text-base font-bold tracking-tight">System Preferences</h2>
-              <p className="text-xs" style={{ color: "var(--ct-muted)" }}>Interval durations & appearance mode</p>
+              <h2 className="text-sm font-bold tracking-tight">System Preferences</h2>
+              <p className="text-[11px] text-slate-400">Hardware parameters & appearance</p>
             </div>
           </div>
-          <button id="settings-close" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center ct-icon-btn transition-colors" style={{ color: "var(--ct-muted)" }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button id="settings-close" onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center ct-icon-btn transition-colors text-slate-400 hover:text-white">
+            ✕
           </button>
         </div>
 
-        {/* Timer durations */}
-        <div className="space-y-4 mb-6">
-          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--ct-muted)" }}>Session Durations (minutes)</p>
+        {/* Interval Duration Calibrators */}
+        <div className="space-y-3 mb-5">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Interval Calibrations (Minutes)</p>
           {[
-            { label: "Work Interval", value: workMin, min: 1, max: 120, set: setWorkMin },
-            { label: "Rest Break Interval", value: breakMin, min: 1, max: 60, set: setBreakMin },
+            { label: "Focus Work Session", value: workMin, min: 1, max: 120, set: setWorkMin },
+            { label: "Restorative Break", value: breakMin, min: 1, max: 60, set: setBreakMin },
           ].map(({ label, value, min, max, set }) => (
-            <div key={label} className="flex items-center justify-between p-3 rounded-2xl" style={{ background: "var(--ct-input-bg)", border: "1px solid var(--ct-input-bd)" }}>
-              <span className="text-xs font-semibold" style={{ color: "var(--ct-text)" }}>{label}</span>
+            <div key={label} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <span className="text-xs font-medium text-[var(--ct-text)]">{label}</span>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => set(Math.max(min, value - 1))} className="w-7 h-7 rounded-lg ct-btn flex items-center justify-center text-sm font-bold transition-all hover:scale-105">−</button>
+                <button onClick={() => set(Math.max(min, value - 1))} className="w-6 h-6 rounded-md ct-btn flex items-center justify-center text-xs font-bold">−</button>
                 <input
                   type="number" value={value} min={min} max={max}
                   onChange={(e) => set(Number(e.target.value))}
                   className={inputCls}
                   style={{ background: "var(--ct-bg)", borderColor: "var(--ct-input-bd)", color: "var(--ct-text)" }}
                 />
-                <button onClick={() => set(Math.min(max, value + 1))} className="w-7 h-7 rounded-lg ct-btn flex items-center justify-center text-sm font-bold transition-all hover:scale-105">+</button>
+                <button onClick={() => set(Math.min(max, value + 1))} className="w-6 h-6 rounded-md ct-btn flex items-center justify-center text-xs font-bold">+</button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Theme mode */}
-        <div className="space-y-2 mb-6">
-          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--ct-muted)" }}>Display Mode</p>
-          <div className="flex gap-2 rounded-2xl p-1" style={{ background: "var(--ct-input-bg)", border: "1px solid var(--ct-input-bd)" }}>
+        {/* Display Finish */}
+        <div className="space-y-2 mb-5">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Chassis Finish</p>
+          <div className="flex gap-2 rounded-xl p-1 bg-white/[0.02] border border-white/[0.06]">
             {(["dark", "light"] as const).map((t) => (
               <button
                 key={t} id={`theme-${t}`}
                 onClick={() => setTheme(t)}
-                className="flex-1 py-2 rounded-xl text-xs font-bold capitalize transition-all duration-200 flex items-center justify-center gap-1.5"
+                className="flex-1 py-1.5 rounded-lg text-xs font-bold capitalize transition-all duration-200 flex items-center justify-center gap-1.5"
                 style={theme === t
                   ? { background: "var(--ct-work-accent)", color: "#000000" }
                   : { color: "var(--ct-muted)" }}
               >
-                {t === "dark" ? (
-                  <>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                    <span>Dark Obsidian</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" strokeWidth={2} /><path strokeLinecap="round" strokeWidth={2} d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
-                    <span>Light Ceramic</span>
-                  </>
-                )}
+                {t === "dark" ? "Obsidian Matte" : "Ceramic Bright"}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Apply */}
+        {/* Keyboard Shortcuts Reference */}
+        <div className="p-3 rounded-xl bg-black/40 border border-white/[0.06] mb-5 text-[11px] text-slate-400 space-y-1 font-mono">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tactile Shortcuts</div>
+          <div className="flex justify-between"><span>[Space]</span><span className="text-slate-300">Start / Pause Timer</span></div>
+          <div className="flex justify-between"><span>[R]</span><span className="text-slate-300">Reset Session</span></div>
+          <div className="flex justify-between"><span>[W] / [B]</span><span className="text-slate-300">Switch Work / Break</span></div>
+        </div>
+
+        {/* Apply Trigger */}
         <button
           id="settings-apply" onClick={apply}
-          className="w-full py-2.5 rounded-xl text-sm font-bold text-slate-950 transition-all hover:opacity-90 active:scale-98 shadow-md"
+          className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-950 transition-all hover:opacity-90 active:scale-98 shadow-md"
           style={{ background: "var(--ct-work-accent)" }}
         >
-          Save Preferences
+          Save & Apply Parameters
         </button>
       </div>
     </div>
   );
 }
 
-// ─── Cortisol Strain Bio-Gauge ──────────────────────────────────────────────
+// ─── Master Chronometer & Session Ribbon ────────────────────────────────────
 
-function CortisolChart() {
-  const stressLevel = useStore((s) => s.stressLevel);
-  const theme = useStore((s) => s.theme);
-  const pct = Math.round(stressLevel * 100);
-  const hue = Math.round((1 - stressLevel) * 120);
-  const lumVal = theme === "light" ? "38%" : "70%";
-  const cx = 100, cy = 108, ro = 82, ri = 52, gap = 2.5;
-  const step = 180 / SEGS.length;
-  const needleDeg = 180 + stressLevel * 180;
+function SessionChronometer() {
+  const {
+    timeLeft,
+    isRunning,
+    mode,
+    workDuration,
+    breakDuration,
+    startTimer,
+    pauseTimer,
+    resetTimer,
+    setMode,
+    setWorkDuration,
+    tasks,
+    activeTaskId,
+  } = useStore();
 
-  const isLow = stressLevel < 0.35;
-  const isMed = stressLevel >= 0.35 && stressLevel < 0.65;
-  const stressLabel = isLow ? "LOW" : isMed ? "NORMAL" : "HIGH";
-
-  const tipText = isLow
-    ? "Optimal neuro-clarity. Ideal for sustained deep work."
-    : isMed
-    ? "Metabolic strain accumulating steadily. Rest interval approaching."
-    : "Cortisol threshold exceeded. Step away, hydrate, and breathe.";
-
-  return (
-    <div className="flex flex-col items-center gap-3">
-      {/* Header */}
-      <div className="w-full flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ct-text)" }}>
-              Cortisol Strain Gauge
-            </h2>
-            <p className="text-xs" style={{ color: "var(--ct-muted)" }}>
-              Real-time physiological load simulation
-            </p>
-          </div>
-        </div>
-
-        <span
-          className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
-          style={{
-            background: isLow ? "rgba(16, 185, 129, 0.15)" : isMed ? "rgba(245, 158, 11, 0.15)" : "rgba(244, 63, 94, 0.15)",
-            color: isLow ? "#34d399" : isMed ? "#fbbf24" : "#fb7185",
-            border: `1px solid ${isLow ? "rgba(16, 185, 129, 0.3)" : isMed ? "rgba(245, 158, 11, 0.3)" : "rgba(244, 63, 94, 0.3)"}`,
-          }}
-        >
-          {stressLabel} STRAIN
-        </span>
-      </div>
-
-      {/* SVG Semicircle Dial */}
-      <div className="relative w-full max-w-[280px]">
-        <svg viewBox="-22 0 244 116" className="w-full">
-          <defs>
-            <filter id="dial-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#000" floodOpacity="0.45" />
-            </filter>
-          </defs>
-
-          {/* Semicircle Color Segments */}
-          {SEGS.map((seg, i) => (
-            <path key={i} d={segPath(cx, cy, ro, ri, 180 + i * step + gap / 2, 180 + (i + 1) * step - gap / 2)} fill={seg.color} opacity={0.88} />
-          ))}
-
-          {/* Scale Labels */}
-          {([
-            { label: "LOW", deg: 205 },
-            { label: "NORMAL", deg: 270 },
-            { label: "HIGH", deg: 335 },
-          ] as const).map(({ label, deg }) => {
-            const p = polar(cx, cy, ro + 14, deg);
-            return (
-              <text key={label} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle"
-                fontSize="7.5" fontWeight="700" letterSpacing="0.8" fill="var(--ct-muted)">
-                {label}
-              </text>
-            );
-          })}
-
-          {/* Needle Indicator with Pivot Counterweight */}
-          <g style={{ transformOrigin: `${cx}px ${cy}px`, transform: `rotate(${needleDeg}deg)`, transition: "transform 0.6s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            <polygon points={`${cx},${cy - 3.5} ${cx + 74},${cy} ${cx},${cy + 3.5}`} fill="var(--ct-needle-main)" filter="url(#dial-shadow)" />
-            <polygon points={`${cx},${cy - 2.5} ${cx - 15},${cy} ${cx},${cy + 2.5}`} fill="var(--ct-needle-tail)" />
-          </g>
-
-          {/* Center Instrument Pivot */}
-          <circle cx={cx} cy={cy} r={10} fill="var(--ct-bg)" stroke="var(--ct-border)" strokeWidth="1.5" />
-          <circle cx={cx} cy={cy} r={5} fill={isLow ? "#10b981" : isMed ? "#f59e0b" : "#f43f5e"} />
-        </svg>
-
-        {/* Percentage Readout & Clinical Tip */}
-        <div className="flex flex-col items-center -mt-2">
-          <span className="text-3xl font-extrabold tabular-nums tracking-tight leading-none" style={{ color: `hsl(${hue},85%,${lumVal})` }}>
-            {pct}%
-          </span>
-          <p className="text-xs font-medium text-center mt-1.5 max-w-[250px]" style={{ color: "var(--ct-muted)" }}>
-            {tipText}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Pomodoro Chronograph ───────────────────────────────────────────────────
-
-function Timer() {
-  const { timeLeft, isRunning, mode, workDuration, breakDuration, startTimer, pauseTimer, resetTimer, setMode } = useStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTick = () => {
@@ -292,119 +173,302 @@ function Timer() {
 
   useEffect(() => () => clearTick(), []);
 
+  // Quick duration adjust (+/- 5m)
+  const adjustWorkMinutes = (deltaMin: number) => {
+    if (isRunning) return;
+    const curMin = Math.round(workDuration / 60);
+    const nextMin = Math.max(1, Math.min(120, curMin + deltaMin));
+    setWorkDuration(nextMin * 60);
+  };
+
   const total = mode === "work" ? workDuration : breakDuration;
-  const prog = ((total - timeLeft) / total) * 100;
-  const accent = mode === "work" ? "var(--ct-work-accent)" : "var(--ct-break-accent)";
+  const elapsed = total - timeLeft;
+  const progressPct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+
+  const activeTask = tasks.find((t) => t.id === activeTaskId);
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      {/* Header with Mode Switcher */}
-      <div className="w-full flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9" strokeWidth="1.8" />
-              <path strokeLinecap="round" strokeWidth="1.8" d="M12 7v5l3 3" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ct-text)" }}>
-              Session Chronograph
-            </h2>
-            <p className="text-xs" style={{ color: "var(--ct-muted)" }}>
-              {mode === "work" ? "Active Deep Work Session" : "Restorative Recovery Break"}
-            </p>
-          </div>
+    <div className="flex flex-col justify-between h-full gap-4">
+      {/* Instrument Bar */}
+      <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: mode === "work" ? "#f59e0b" : "#10b981" }} />
+          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+            {mode === "work" ? "Deep Work Interval" : "Restorative Recovery"}
+          </h2>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.05] text-slate-400 border border-white/[0.08]">
+            CHRONO
+          </span>
         </div>
 
-        {/* Pill Mode Switcher */}
-        <div className="flex gap-1 rounded-xl p-1" style={{ background: "var(--ct-input-bg)", border: "1px solid var(--ct-input-bd)" }}>
-          {(["work", "break"] as const).map((m) => (
-            <button
-              key={m}
-              id={`timer-mode-${m}`}
-              onClick={() => { clearTick(); setMode(m); }}
-              className="px-3 py-1 rounded-lg text-xs font-bold transition-all duration-200"
-              style={mode === m ? { background: accent, color: mode === "work" ? "#000000" : "#ffffff" } : { color: "var(--ct-muted)" }}
-            >
-              {m === "work" ? "Work" : "Break"}
-            </button>
-          ))}
+        {/* Mode Switcher */}
+        <div className="flex gap-1 rounded-lg p-1 bg-black/40 border border-white/[0.08]">
+          <button
+            onClick={() => { clearTick(); setMode("work"); }}
+            className={`px-3 py-1 rounded-md text-[11px] font-bold font-mono transition-all ${
+              mode === "work"
+                ? "bg-amber-500 text-slate-950 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            WORK
+          </button>
+          <button
+            onClick={() => { clearTick(); setMode("break"); }}
+            className={`px-3 py-1 rounded-md text-[11px] font-bold font-mono transition-all ${
+              mode === "break"
+                ? "bg-emerald-500 text-slate-950 shadow-sm"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            BREAK
+          </button>
         </div>
       </div>
 
-      {/* Circular Progress Face */}
-      <div className="relative" style={{ width: 196, height: 196 }}>
-        <svg className="absolute inset-0 -rotate-90" width="196" height="196">
-          <circle cx="98" cy="98" r="88" fill="none" stroke="var(--ct-ring-bg)" strokeWidth="8" />
-          <circle
-            cx="98" cy="98" r="88" fill="none" stroke={accent} strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 88}`}
-            strokeDashoffset={`${2 * Math.PI * 88 * (1 - prog / 100)}`}
-            style={{ transition: "stroke-dashoffset 0.8s ease, stroke 0.3s" }}
-          />
-        </svg>
+      {/* Main Digits Face with Ghost Phosphor Layer */}
+      <div className="relative py-2 flex flex-col items-center justify-center">
+        {/* Ghost background segment layer */}
+        <span className="absolute text-6xl sm:text-7xl font-extrabold font-mono tracking-tight text-white/[0.04] select-none pointer-events-none tabular-nums">
+          88:88
+        </span>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-5xl font-extrabold tabular-nums tracking-tight" style={{ color: accent }}>
-            {fmt(timeLeft)}
-          </span>
-          <span className="text-[11px] font-semibold mt-1 uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/20" style={{ color: "var(--ct-muted)" }}>
-            {mode === "work" ? "Work Interval" : "Break Interval"}
-          </span>
-        </div>
-      </div>
-
-      {/* Tactile Timer Triggers */}
-      <div className="flex items-center gap-3">
-        <button
-          id="timer-start-pause"
-          onClick={handleStartPause}
-          className="px-7 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
-          style={{ background: accent, color: mode === "work" ? "#000000" : "#ffffff" }}
+        {/* Live Active Clock Digits */}
+        <span
+          className="relative text-6xl sm:text-7xl font-extrabold font-mono tracking-tight tabular-nums transition-colors"
+          style={{
+            color: mode === "work" ? "var(--ct-work-accent)" : "var(--ct-break-accent)",
+            textShadow: mode === "work" ? "0 0 24px rgba(245, 158, 11, 0.25)" : "0 0 24px rgba(16, 185, 129, 0.25)",
+          }}
         >
-          {isRunning ? (
-            <>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-              <span>Pause</span>
-            </>
+          {fmt(timeLeft)}
+        </span>
+
+        {/* Active Target Banner */}
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 max-w-sm truncate text-center">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">TARGET:</span>
+          {activeTask ? (
+            <span className="font-semibold text-slate-200 truncate">{activeTask.title}</span>
           ) : (
-            <>
-              <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-              <span>Start Session</span>
-            </>
+            <span className="italic text-slate-500">General Focus Session</span>
           )}
-        </button>
+        </div>
+      </div>
 
-        <button
-          id="timer-reset"
-          onClick={() => { clearTick(); resetTimer(); }}
-          className="px-4 py-2.5 rounded-xl text-xs font-semibold ct-btn transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
-          style={{ color: "var(--ct-muted)" }}
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>Reset</span>
-        </button>
+      {/* Tactile Control Panel */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-2">
+          {/* Main Action Trigger */}
+          <button
+            id="timer-start-pause"
+            onClick={handleStartPause}
+            className={`px-6 py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center gap-2 ${
+              mode === "work"
+                ? "bg-amber-500 hover:bg-amber-400 text-slate-950"
+                : "bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+            }`}
+          >
+            {isRunning ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                <span>PAUSE</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                <span>ENGAGE FOCUS</span>
+              </>
+            )}
+          </button>
+
+          {/* Reset button */}
+          <button
+            id="timer-reset"
+            onClick={() => { clearTick(); resetTimer(); }}
+            title="Reset to interval start"
+            className="p-2.5 rounded-xl ct-btn text-slate-400 hover:text-white transition-all active:scale-95"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Quick Steppers (-5m / +5m) */}
+        {!isRunning && mode === "work" && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => adjustWorkMinutes(-5)}
+              className="px-2 py-1 rounded-lg ct-btn text-[11px] font-mono text-slate-400 hover:text-white"
+              title="Decrease interval by 5 min"
+            >
+              -5M
+            </button>
+            <button
+              onClick={() => adjustWorkMinutes(5)}
+              className="px-2 py-1 rounded-lg ct-btn text-[11px] font-mono text-slate-400 hover:text-white"
+              title="Increase interval by 5 min"
+            >
+              +5M
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Chrono Ribbon (Continuous Timeline Track) ── */}
+      <div className="pt-2">
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
+          <span>00:00</span>
+          <span>{Math.round(progressPct)}% ELAPSED</span>
+          <span>{fmt(total)}</span>
+        </div>
+        <div className="relative h-2 w-full rounded-full bg-black/60 border border-white/[0.06] overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${progressPct}%`,
+              background: mode === "work" ? "var(--ct-work-accent)" : "var(--ct-break-accent)",
+              boxShadow: mode === "work" ? "0 0 8px rgba(245, 158, 11, 0.5)" : "0 0 8px rgba(16, 185, 129, 0.5)",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Task Ledger (Objective Manager) ────────────────────────────────────────
+// ─── Physiological Cortisol Barometer ───────────────────────────────────────
 
-function TodoList() {
-  const { tasks, addTask, toggleTask, deleteTask } = useStore();
+function CortisolBarometer() {
+  const stressLevel = useStore((s) => s.stressLevel);
+  const mode = useStore((s) => s.mode);
+
+  const pct = Math.round(stressLevel * 100);
+
+  // 4 Clinical Zones
+  let zoneTitle = "HOMEOSTASIS";
+  let zoneColor = "#10b981";
+  let advice = "Optimal autonomic balance. Prime neural state for deep analytical work.";
+
+  if (pct >= 80) {
+    zoneTitle = "EXHAUSTION THRESHOLD";
+    zoneColor = "#f43f5e";
+    advice = "Elevated cortisol load detected. Disengage immediately. Hydrate & initiate 4-7-8 breathing.";
+  } else if (pct >= 55) {
+    zoneTitle = "ELEVATED STRAIN";
+    zoneColor = "#f97316";
+    advice = "Cognitive friction accumulating. Wrap up active objective and prepare for restorative break.";
+  } else if (pct >= 25) {
+    zoneTitle = "OPTIMAL FLOW";
+    zoneColor = "#f59e0b";
+    advice = "Active focus engagement. Neuro-metabolic demand within sustainable flow parameters.";
+  }
+
+  // 12-segment tension ladder
+  const totalSegments = 12;
+  const activeSegments = Math.round((pct / 100) * totalSegments);
+
+  return (
+    <div className="flex flex-col justify-between h-full gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: zoneColor }} />
+          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+            Physiological Load
+          </h2>
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.05] text-slate-400 border border-white/[0.08]">
+            TELEMETRY
+          </span>
+        </div>
+
+        {/* Zone Badge */}
+        <span
+          className="text-[10px] font-mono font-extrabold uppercase px-2.5 py-0.5 rounded border tracking-wider"
+          style={{
+            background: `${zoneColor}15`,
+            color: zoneColor,
+            borderColor: `${zoneColor}35`,
+          }}
+        >
+          {zoneTitle}
+        </span>
+      </div>
+
+      {/* Main Strain Index & Digital Readout */}
+      <div className="flex items-baseline justify-between py-1 px-1">
+        <div className="flex flex-col">
+          <span className="text-4xl sm:text-5xl font-mono font-extrabold tracking-tight tabular-nums" style={{ color: zoneColor }}>
+            {pct}%
+          </span>
+          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mt-0.5">
+            CORTISOL STRAIN INDEX
+          </span>
+        </div>
+
+        <div className="text-right">
+          <span className="text-xs font-mono font-bold text-slate-300 uppercase">
+            {mode === "work" ? "METABOLIC ACCUMULATION" : "PARASYMPATHETIC FLUSH"}
+          </span>
+          <p className="text-[10px] text-slate-400">
+            {mode === "work" ? "Rises across active interval" : "Dissipates during break"}
+          </p>
+        </div>
+      </div>
+
+      {/* 12-Segment LED Tension Bar Ladder */}
+      <div className="space-y-1.5">
+        <div className="grid grid-cols-12 gap-1.5 h-4 p-1 rounded-lg bg-black/60 border border-white/[0.06]">
+          {Array.from({ length: totalSegments }).map((_, i) => {
+            const isActive = i < activeSegments;
+            let segColor = "#10b981";
+            if (i >= 9) segColor = "#f43f5e";
+            else if (i >= 6) segColor = "#f97316";
+            else if (i >= 3) segColor = "#f59e0b";
+
+            return (
+              <div
+                key={i}
+                className="h-full rounded-xs transition-all duration-300"
+                style={{
+                  background: isActive ? segColor : "rgba(255,255,255,0.04)",
+                  boxShadow: isActive ? `0 0 6px ${segColor}80` : "none",
+                }}
+              />
+            );
+          })}
+        </div>
+
+        <div className="flex justify-between text-[9px] font-mono text-slate-500 uppercase">
+          <span>0% Baseline</span>
+          <span>50% Midpoint</span>
+          <span>100% Critical</span>
+        </div>
+      </div>
+
+      {/* Dynamic Clinical Recovery Advice */}
+      <div className="p-3 rounded-xl bg-black/40 border border-white/[0.06] text-xs text-slate-300 flex items-start gap-2.5">
+        <span className="text-amber-400 font-bold font-mono text-xs flex-shrink-0 mt-0.5">ℹ</span>
+        <p className="text-[11px] leading-relaxed text-slate-300">
+          {advice}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Objective Flight Ledger (Task Manager) ─────────────────────────────────
+
+function TaskFlightLedger() {
+  const { tasks, addTask, toggleTask, deleteTask, activeTaskId, setActiveTaskId } = useStore();
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
+  const [title, setTitle] = useState("");
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const inp = e.currentTarget.elements.namedItem("task") as HTMLInputElement;
-    if (inp.value.trim()) {
-      addTask(inp.value);
-      inp.value = "";
+    if (title.trim()) {
+      addTask(title);
+      setTitle("");
     }
   };
 
@@ -416,122 +480,150 @@ function TodoList() {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Ledger Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/[0.07]">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 shadow-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
           <div>
-            <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ct-text)" }}>
-              Task Ledger
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-[var(--ct-text)]">
+              Objective Flight Ledger
             </h2>
-            <p className="text-xs" style={{ color: "var(--ct-muted)" }}>
-              {pending.length} pending • {completed.length} completed
+            <p className="text-[11px] text-slate-400">
+              {pending.length} Pending • {completed.length} Completed
             </p>
           </div>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex gap-1 rounded-xl p-1" style={{ background: "var(--ct-input-bg)", border: "1px solid var(--ct-input-bd)" }}>
+        <div className="flex gap-1 rounded-lg p-1 bg-black/40 border border-white/[0.08]">
           {(["all", "pending", "completed"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className="px-2.5 py-1 rounded-lg text-xs font-semibold capitalize transition-all"
-              style={filter === f ? { background: "var(--ct-work-accent)", color: "#000000" } : { color: "var(--ct-muted)" }}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold font-mono transition-all ${
+                filter === f
+                  ? "bg-amber-500 text-slate-950 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
             >
-              {f === "all" ? "All" : f === "pending" ? "Pending" : "Done"}
+              {f === "all" ? "ALL" : f === "pending" ? "ACTIVE" : "DONE"}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Task Input */}
+      {/* Task Fast Input Field */}
       <form onSubmit={onSubmit} className="flex gap-2">
         <div className="relative flex-1">
           <input
             id="todo-input"
-            name="task"
             type="text"
-            placeholder="Add an objective to the ledger…"
-            className="w-full rounded-xl pl-4 pr-16 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-amber-500/50 transition-colors"
-            style={{ background: "var(--ct-input-bg)", border: "1px solid var(--ct-input-bd)", color: "var(--ct-text)" }}
+            placeholder="Log target objective for current cycle..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded-xl pl-4 pr-14 py-2.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+            style={{
+              background: "var(--ct-input-bg)",
+              border: "1px solid var(--ct-input-bd)",
+              color: "var(--ct-text)",
+            }}
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] hidden sm:block font-medium" style={{ color: "var(--ct-dim)" }}>
-            Enter
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-500 hidden sm:block">
+            ENTER
           </span>
         </div>
         <button
           id="todo-add"
           type="submit"
-          className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow-sm"
+          className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-transform hover:scale-105 active:scale-95 flex items-center gap-1 shadow-sm"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Add</span>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+          <span>Log</span>
         </button>
       </form>
 
-      {/* Task Ledger List */}
-      <div className="flex-1 flex flex-col overflow-y-auto space-y-2 pr-1 min-h-[300px] max-h-[540px]">
-        {displayedTasks.map((task) => (
-          <div
-            key={task.id}
-            className="group flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl ct-btn transition-all duration-200"
-            style={{
-              background: "var(--ct-input-bg)",
-              opacity: task.completed ? 0.6 : 1,
-            }}
-          >
-            {/* Custom Checkbox */}
-            <button
-              id={`task-toggle-${task.id}`}
-              onClick={() => toggleTask(task.id)}
-              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                task.completed ? "bg-emerald-500 border-emerald-500" : "border-slate-500 hover:border-amber-400"
+      {/* Task List */}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[220px] max-h-[380px]">
+        {displayedTasks.map((task) => {
+          const isTarget = activeTaskId === task.id;
+
+          return (
+            <div
+              key={task.id}
+              className={`group flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+                isTarget
+                  ? "bg-amber-500/10 border-amber-500/30"
+                  : "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]"
               }`}
+              style={{ opacity: task.completed ? 0.6 : 1 }}
             >
-              {task.completed && (
-                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
+              {/* Custom Mechanical Checkbox */}
+              <button
+                id={`task-toggle-${task.id}`}
+                onClick={() => toggleTask(task.id)}
+                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all flex-shrink-0 ${
+                  task.completed
+                    ? "bg-emerald-500 border-emerald-500 text-white"
+                    : "border-slate-500 hover:border-amber-400 bg-black/40"
+                }`}
+              >
+                {task.completed && (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Title */}
+              <span
+                className={`flex-1 text-xs font-medium ${
+                  task.completed ? "line-through text-slate-400" : "text-[var(--ct-text)]"
+                }`}
+              >
+                {task.title}
+              </span>
+
+              {/* Focus Target Trigger */}
+              {!task.completed && (
+                <button
+                  onClick={() => setActiveTaskId(isTarget ? null : task.id)}
+                  title={isTarget ? "Active focus target" : "Set as active focus target"}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                    isTarget
+                      ? "bg-amber-500 text-slate-950 font-bold"
+                      : "opacity-0 group-hover:opacity-100 bg-white/10 text-slate-300 hover:text-white"
+                  }`}
+                >
+                  {isTarget ? "TARGET" : "SET TARGET"}
+                </button>
               )}
-            </button>
 
-            <span
-              className={`flex-1 text-xs sm:text-sm font-medium ${
-                task.completed ? "line-through text-slate-400" : "text-[var(--ct-text)]"
-              }`}
-            >
-              {task.title}
-            </span>
-
-            {/* Delete button */}
-            <button
-              id={`task-delete-${task.id}`}
-              onClick={() => deleteTask(task.id)}
-              title="Remove task"
-              className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
-              style={{ color: "var(--ct-muted)" }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        ))}
+              {/* Delete button */}
+              <button
+                id={`task-delete-${task.id}`}
+                onClick={() => deleteTask(task.id)}
+                title="Remove task"
+                className="p-1 rounded text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          );
+        })}
 
         {displayedTasks.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center py-16 text-center my-auto" style={{ color: "var(--ct-muted)" }}>
-            <svg className="w-10 h-10 mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500">
+            <svg className="w-8 h-8 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            <p className="text-xs font-semibold">No objectives found</p>
-            <p className="text-[11px] mt-0.5">Enter a task in the field above to start your focus session</p>
+            <p className="text-xs font-bold text-slate-400">No objectives logged</p>
+            <p className="text-[11px] mt-0.5">Enter a target above to initiate deep work</p>
           </div>
         )}
       </div>
@@ -541,48 +633,19 @@ function TodoList() {
 
 // ─── Header Live Status Badges ──────────────────────────────────────────────
 
-function StressBadge() {
-  const stressLevel = useStore((s) => s.stressLevel);
-  const pct = Math.round(stressLevel * 100);
-  const hue = Math.round((1 - stressLevel) * 120);
-
-  return (
-    <div
-      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold"
-      style={{
-        background: "var(--ct-input-bg)",
-        border: "1px solid var(--ct-input-bd)",
-        color: `hsl(${hue},85%,68%)`,
-      }}
-    >
-      <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: `hsl(${hue},85%,55%)` }} />
-      <span>Strain {pct}%</span>
-    </div>
-  );
-}
-
-function MusicHeaderBadge() {
+function HeaderAudioPill() {
   const isPlaying = useMusicStore((s) => s.isPlaying);
   const currentTitle = useMusicStore((s) => s.currentTrack.title);
   const playbackMode = useMusicStore((s) => s.playbackMode);
   const libraryIndex = useMusicStore((s) => s.libraryIndex);
   const savedCount = useMusicStore((s) => s.savedTracks.length);
 
-  const scrollToMusic = () => {
-    const el = document.getElementById("focus-music-section");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  };
-
   return (
-    <button
-      onClick={scrollToMusic}
-      title={isPlaying ? `Now Playing: ${currentTitle}` : "Focus Audio Deck"}
-      className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 active:scale-95 cursor-pointer"
+    <div
+      className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono transition-all"
       style={{
-        background: isPlaying ? "rgba(245, 158, 11, 0.16)" : "var(--ct-input-bg)",
-        border: isPlaying ? "1px solid rgba(245, 158, 11, 0.4)" : "1px solid var(--ct-input-bd)",
+        background: isPlaying ? "rgba(245, 158, 11, 0.12)" : "var(--ct-input-bg)",
+        border: isPlaying ? "1px solid rgba(245, 158, 11, 0.35)" : "1px solid var(--ct-input-bd)",
         color: isPlaying ? "#fbbf24" : "var(--ct-muted)",
       }}
     >
@@ -593,29 +656,74 @@ function MusicHeaderBadge() {
             <span className="w-0.5 bg-orange-400 rounded-full ct-eq-bar-2" />
             <span className="w-0.5 bg-emerald-400 rounded-full ct-eq-bar-3" />
           </div>
-          <span className="max-w-[130px] truncate font-medium">{currentTitle}</span>
+          <span className="max-w-[140px] truncate font-sans text-xs">{currentTitle}</span>
           {playbackMode === "library" && (
-            <span className="text-[10px] opacity-75 font-mono">
+            <span className="text-[10px] text-amber-300">
               [{libraryIndex + 1}/{savedCount}]
             </span>
           )}
         </>
       ) : (
         <>
-          <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
-          </svg>
-          <span>Audio Deck</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+          <span>DECK STANDBY</span>
         </>
       )}
-    </button>
+    </div>
   );
 }
 
-// ─── Main Instrument Console Cockpit ────────────────────────────────────────
+function HeaderStrainPill() {
+  const stressLevel = useStore((s) => s.stressLevel);
+  const pct = Math.round(stressLevel * 100);
+  const hue = Math.round((1 - stressLevel) * 120);
+
+  return (
+    <div
+      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold"
+      style={{
+        background: "var(--ct-input-bg)",
+        border: "1px solid var(--ct-input-bd)",
+        color: `hsl(${hue},85%,68%)`,
+      }}
+    >
+      <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: `hsl(${hue},85%,55%)` }} />
+      <span>STRAIN {pct}%</span>
+    </div>
+  );
+}
+
+// ─── Main Application Hardware Console ──────────────────────────────────────
 
 export default function HomePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { isRunning, startTimer, pauseTimer, resetTimer, setMode } = useStore();
+
+  // Global tactile keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input
+      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (isRunning) pauseTimer();
+        else startTimer();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        resetTimer();
+      } else if (e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        setMode("work");
+      } else if (e.key === "b" || e.key === "B") {
+        e.preventDefault();
+        setMode("break");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isRunning, startTimer, pauseTimer, resetTimer, setMode]);
 
   return (
     <>
@@ -623,48 +731,41 @@ export default function HomePage() {
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <div className="min-h-screen flex flex-col">
-        {/* Navigation & Status Header */}
+        {/* ── Master Technical Rail (Header) ── */}
         <header
           className="sticky top-0 z-30 border-b backdrop-blur-md transition-colors"
           style={{ background: "var(--ct-header)", borderColor: "var(--ct-border)" }}
         >
-          <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-            {/* Brand Mark */}
+          <div className="mx-auto max-w-[1560px] px-4 sm:px-6 py-3 flex items-center justify-between">
+            {/* Brand Logo & Hardware Model Mark */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-extrabold shadow-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="9" strokeWidth="2.2" />
-                  <path strokeLinecap="round" strokeWidth="2.2" d="M12 7v5l3 3" />
-                </svg>
+              <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-extrabold shadow-sm font-mono">
+                CT
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-extrabold tracking-tight" style={{ color: "var(--ct-text)" }}>
+                <span className="text-sm font-extrabold tracking-tight" style={{ color: "var(--ct-text)" }}>
                   CortiTick
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--ct-muted)" }}>
-                  Precision Focus & Strain Console
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">
+                  BIO-CHRONO STUDIO CONSOLE
                 </span>
               </div>
             </div>
 
-            {/* Live Status Indicators & Controls */}
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              <MusicHeaderBadge />
-              <StressBadge />
+            {/* Live Status Telemetry & Preferences Trigger */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <HeaderAudioPill />
+              <HeaderStrainPill />
 
-              {/* Settings button */}
               <button
                 id="open-settings"
                 onClick={() => setSettingsOpen(true)}
-                className="w-9 h-9 rounded-xl flex items-center justify-center ct-btn transition-colors"
-                style={{ color: "var(--ct-muted)" }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center ct-btn transition-colors text-slate-400 hover:text-white"
+                title="System Preferences & Calibrations"
                 aria-label="System Preferences"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </button>
@@ -672,45 +773,31 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Tri-Deck Mission Control Cockpit */}
-        <main className="mx-auto max-w-[1600px] w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-            {/* Column 1: Bio-Strain Gauge & Session Chronograph */}
-            <div className="flex flex-col gap-6">
-              <section
-                className="rounded-3xl p-6 sm:p-7 shadow-lg transition-all"
-                style={{ background: "var(--ct-card)", border: "1px solid var(--ct-border)" }}
-              >
-                <CortisolChart />
-              </section>
-
-              <section
-                className="rounded-3xl p-6 sm:p-7 shadow-lg transition-all"
-                style={{ background: "var(--ct-card)", border: "1px solid var(--ct-border)" }}
-              >
-                <Timer />
-              </section>
+        {/* ── Unified Instrument Deck (Master Chassis) ── */}
+        <main className="mx-auto max-w-[1560px] w-full px-4 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col gap-6">
+          {/* Top Master Bay: Panoramic Chronometer & Bio-Barometer */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            {/* Left Bay (7 Cols): Session Chronometer */}
+            <div className="lg:col-span-7 rounded-2xl p-5 sm:p-6 ct-chassis-bay flex flex-col">
+              <SessionChronometer />
             </div>
 
-            {/* Column 2: Task Ledger (High Visibility Center Stage) */}
-            <div className="flex flex-col">
-              <section
-                className="rounded-3xl p-6 sm:p-7 shadow-lg transition-all flex flex-col min-h-[580px] xl:min-h-[640px]"
-                style={{ background: "var(--ct-card)", border: "1px solid var(--ct-border)" }}
-              >
-                <TodoList />
-              </section>
+            {/* Right Bay (5 Cols): Physiological Cortisol Barometer */}
+            <div className="lg:col-span-5 rounded-2xl p-5 sm:p-6 ct-chassis-bay flex flex-col">
+              <CortisolBarometer />
+            </div>
+          </div>
+
+          {/* Bottom Operational Decks: Objective Flight Ledger & Focus Acoustic Deck */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            {/* Left Operational Deck (6 Cols): Objective Flight Ledger */}
+            <div className="lg:col-span-6 rounded-2xl p-5 sm:p-6 ct-chassis-bay flex flex-col min-h-[460px]">
+              <TaskFlightLedger />
             </div>
 
-            {/* Column 3: Focus Audio Deck */}
-            <div className="flex flex-col">
-              <section
-                id="focus-music-section"
-                className="rounded-3xl p-6 sm:p-7 shadow-lg transition-all"
-                style={{ background: "var(--ct-card)", border: "1px solid var(--ct-border)" }}
-              >
-                <MusicPlayer />
-              </section>
+            {/* Right Operational Deck (6 Cols): Focus Acoustic Deck */}
+            <div className="lg:col-span-6 rounded-2xl p-5 sm:p-6 ct-chassis-bay flex flex-col min-h-[460px]">
+              <MusicPlayer />
             </div>
           </div>
         </main>

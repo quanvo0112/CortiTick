@@ -19,7 +19,7 @@ export const PRESET_TRACKS: PresetTrack[] = [
     id: "preset-lofi-girl",
     name: "Lofi Girl Study",
     description: "Beats to relax/study to",
-    url: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+    url: "https://www.youtube.com/watch?v=rFZHOHl-L8A",
     type: "video",
     icon: "coffee",
   },
@@ -35,7 +35,7 @@ export const PRESET_TRACKS: PresetTrack[] = [
     id: "preset-chill-beats",
     name: "Chill & Unwind",
     description: "Mellow ambient study beats",
-    url: "https://www.youtube.com/watch?v=5qap5aO4i9A",
+    url: "https://www.youtube.com/watch?v=KQhWhFZF-Qg",
     type: "video",
     icon: "moon",
   },
@@ -54,9 +54,9 @@ const DEFAULT_TRACK: CurrentTrackState = {
   title: "Lofi Hip Hop Radio 📚 beats to relax/study to",
   author: "Lofi Girl",
   type: "video",
-  videoId: "jfKfPfyJRdk",
+  videoId: "rFZHOHl-L8A",
   playlistId: null,
-  thumbnail: "https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg",
+  thumbnail: "https://img.youtube.com/vi/rFZHOHl-L8A/hqdefault.jpg",
 };
 
 interface MusicStoreState {
@@ -111,30 +111,7 @@ export const useMusicStore = create<MusicStoreState>()(
       showVideo: false,
       playlistIndex: 0,
       playlistTotal: 0,
-      savedTracks: [
-        {
-          id: "default-saved-1",
-          url: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
-          title: "Lofi Hip Hop Radio 📚 beats to relax/study to",
-          author: "Lofi Girl",
-          type: "video",
-          videoId: "jfKfPfyJRdk",
-          playlistId: null,
-          thumbnail: "https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg",
-          addedAt: Date.now(),
-        },
-        {
-          id: "default-saved-2",
-          url: "https://www.youtube.com/watch?v=WPni755-Krg",
-          title: "Study Music Alpha Waves: Concentration Music",
-          author: "Yellow Brick Cinema",
-          type: "video",
-          videoId: "WPni755-Krg",
-          playlistId: null,
-          thumbnail: "https://img.youtube.com/vi/WPni755-Krg/hqdefault.jpg",
-          addedAt: Date.now() + 1000,
-        },
-      ],
+      savedTracks: [],
       presets: PRESET_TRACKS,
 
       // Library Queue State
@@ -284,7 +261,7 @@ export const useMusicStore = create<MusicStoreState>()(
       },
     }),
     {
-      name: "cortitick-focus-music-v2",
+      name: "cortitick-focus-music-v4",
       partialize: (state) => ({
         volume: state.volume,
         isMuted: state.isMuted,
