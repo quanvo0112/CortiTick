@@ -52,6 +52,13 @@ CortiTick introduces a **Cortisol Level Gauge**: a dynamic, real-time stress ind
   - Adjust work and break durations at any time via the Settings modal
   - Theme switcher: 🌙 Dark mode / ☀️ Light mode
 
+- **🎵 Focus Sound & YouTube Music Player**
+  - Add YouTube video or playlist links to play ambient / study music directly in the app
+  - Live display of currently playing YouTube video title, channel, and album art
+  - Auto-updating title for playlists as tracks advance, with Next/Previous track controls
+  - One-click focus presets (Lofi Girl, Deep Focus Alpha Waves, Ambient Beats, NCS Playlist)
+  - Toggleable video display window & saved links library (persisted across sessions)
+
 - **📱 Fully Responsive**
   - Clean two-column dashboard layout on desktop, single-column stacked on mobile
 

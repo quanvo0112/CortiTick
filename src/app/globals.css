@@ -1,83 +1,150 @@
 @import "tailwindcss";
 
-/* ── Dark theme (default) ───────────────────────────── */
+/* ── Dark theme (Precision Obsidian Console) ────────── */
 :root {
-  --ct-bg:        #0a0a0f;
-  --ct-card:      rgba(255,255,255,0.03);
-  --ct-border:    rgba(255,255,255,0.08);
-  --ct-text:      #e8e8f0;
-  --ct-muted:     rgba(255,255,255,0.40);
-  --ct-dim:       rgba(255,255,255,0.25);
-  --ct-input-bg:  rgba(255,255,255,0.05);
-  --ct-input-bd:  rgba(255,255,255,0.10);
-  --ct-header:    rgba(10,10,15,0.80);
-  --ct-overlay:   rgba(0,0,0,0.60);
-  --ct-modal:     #0f0f1a;
+  --ct-bg:          #090a0f;
+  --ct-card:        #11131a;
+  --ct-card-hover:  #161922;
+  --ct-card-sub:    #161822;
+  --ct-border:      rgba(255, 255, 255, 0.08);
+  --ct-border-hover:rgba(255, 255, 255, 0.16);
+  --ct-text:        #f8fafc;
+  --ct-muted:       #94a3b8;
+  --ct-dim:         #64748b;
+  --ct-input-bg:    #151720;
+  --ct-input-bd:    rgba(255, 255, 255, 0.11);
+  --ct-header:      rgba(9, 10, 15, 0.88);
+  --ct-overlay:     rgba(0, 0, 0, 0.72);
+  --ct-modal:       #11131c;
+  --ct-shadow:      0 12px 40px -6px rgba(0, 0, 0, 0.65);
   
-  --ct-accent-1:  #c4b5fd;
-  --ct-accent-2:  #e879f9;
-  --ct-btn-bg:    rgba(255,255,255,0.10);
-  --ct-btn-hover: rgba(255,255,255,0.20);
-  --ct-active-bg: rgba(255,255,255,0.15);
-  --ct-active-text: #ffffff;
+  --ct-work-accent: #f59e0b;
+  --ct-work-glow:   rgba(245, 158, 11, 0.22);
+  --ct-break-accent:#10b981;
+  --ct-break-glow:  rgba(16, 185, 129, 0.22);
   
-  --ct-work-accent: #a78bfa;
-  --ct-break-accent: #34d399;
-  --ct-needle-main: #e2e8f0;
-  --ct-needle-tail: #94a3b8;
-  --ct-ring-bg:   rgba(255,255,255,0.06);
-}
-
-/* ── Light theme ────────────────────────────────────── */
-:root.light {
-  --ct-bg:        #f0f4ff;
-  --ct-card:      rgba(255,255,255,0.75);
-  --ct-border:    rgba(0,0,0,0.12);
-  --ct-text:      #1a1a2e;
-  --ct-muted:     rgba(0,0,0,0.60);
-  --ct-dim:       rgba(0,0,0,0.40);
-  --ct-input-bg:  rgba(0,0,0,0.05);
-  --ct-input-bd:  rgba(0,0,0,0.15);
-  --ct-header:    rgba(240,244,255,0.85);
-  --ct-overlay:   rgba(0,0,0,0.45);
-  --ct-modal:     #ffffff;
-
-  --ct-accent-1:  #7c3aed;
-  --ct-accent-2:  #c026d3;
-  --ct-btn-bg:    rgba(0,0,0,0.06);
-  --ct-btn-hover: rgba(0,0,0,0.12);
-  --ct-active-bg: rgba(0,0,0,0.10);
-  --ct-active-text: #000000;
+  --ct-stress-low:  #10b981;
+  --ct-stress-med:  #f59e0b;
+  --ct-stress-high: #f43f5e;
   
-  --ct-work-accent: #7c3aed;
-  --ct-break-accent: #059669;
-  --ct-needle-main: #475569;
+  --ct-needle-main: #f8fafc;
   --ct-needle-tail: #64748b;
-  --ct-ring-bg:   rgba(0,0,0,0.06);
+  --ct-ring-bg:     rgba(255, 255, 255, 0.06);
+
+  --ct-btn-bg:      rgba(255, 255, 255, 0.05);
+  --ct-btn-hover:   rgba(255, 255, 255, 0.10);
+  --ct-active-bg:   rgba(245, 158, 11, 0.14);
 }
 
+/* ── Light theme (Milled Aluminum Ceramic) ──────────── */
+:root.light {
+  --ct-bg:          #f4f5f8;
+  --ct-card:        #ffffff;
+  --ct-card-hover:  #f8fafc;
+  --ct-card-sub:    #f1f3f7;
+  --ct-border:      rgba(0, 0, 0, 0.09);
+  --ct-border-hover:rgba(0, 0, 0, 0.18);
+  --ct-text:        #0f172a;
+  --ct-muted:       #475569;
+  --ct-dim:         #64748b;
+  --ct-input-bg:    #f8fafc;
+  --ct-input-bd:    #cbd5e1;
+  --ct-header:      rgba(244, 245, 248, 0.92);
+  --ct-overlay:     rgba(15, 23, 42, 0.45);
+  --ct-modal:       #ffffff;
+  --ct-shadow:      0 12px 36px -6px rgba(0, 0, 0, 0.09);
+
+  --ct-work-accent: #d97706;
+  --ct-work-glow:   rgba(217, 119, 6, 0.20);
+  --ct-break-accent:#059669;
+  --ct-break-glow:  rgba(5, 150, 105, 0.20);
+  
+  --ct-stress-low:  #059669;
+  --ct-stress-med:  #d97706;
+  --ct-stress-high: #e11d48;
+  
+  --ct-needle-main: #334155;
+  --ct-needle-tail: #94a3b8;
+  --ct-ring-bg:     rgba(0, 0, 0, 0.06);
+
+  --ct-btn-bg:      rgba(0, 0, 0, 0.04);
+  --ct-btn-hover:   rgba(0, 0, 0, 0.08);
+  --ct-active-bg:   rgba(217, 119, 6, 0.12);
+}
+
+/* ── Browser Surface Styling ────────────────────────── */
 body {
   background-color: var(--ct-bg);
   color: var(--ct-text);
-  font-family: 'Inter', sans-serif;
-  transition: background-color 0.3s, color 0.3s;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-font-smoothing: antialiased;
 }
 
+::selection {
+  background: rgba(245, 158, 11, 0.35);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ct-work-accent);
+  outline-offset: 2px;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ct-border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ct-muted);
+}
+
+/* ── Interactive Buttons & Surfaces ─────────────────── */
 .ct-btn {
   background-color: var(--ct-btn-bg);
-  transition: background-color 0.2s;
+  border: 1px solid var(--ct-border);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 .ct-btn:hover {
   background-color: var(--ct-btn-hover);
+  border-color: var(--ct-border-hover);
 }
-.ct-icon-btn:hover {
-  background-color: var(--ct-btn-bg);
+.ct-btn:active {
+  transform: scale(0.98);
 }
 
-.ct-gradient-text {
-  background-image: linear-gradient(to right, var(--ct-accent-1), var(--ct-accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+.ct-icon-btn {
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
+.ct-icon-btn:hover {
+  background-color: var(--ct-btn-hover);
+}
+.ct-icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* Inset instrument card style */
+.ct-instrument-panel {
+  background-color: var(--ct-card);
+  border: 1px solid var(--ct-border);
+  box-shadow: var(--ct-shadow);
+}
+
+/* ── Animated Sound Equalizer VU Meters ─────────────── */
+@keyframes ct-eq-1 { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+@keyframes ct-eq-2 { 0%, 100% { height: 15px; } 50% { height: 6px; } }
+@keyframes ct-eq-3 { 0%, 100% { height: 7px; } 50% { height: 18px; } }
+@keyframes ct-eq-4 { 0%, 100% { height: 14px; } 50% { height: 5px; } }
+
+.ct-eq-bar-1 { animation: ct-eq-1 0.9s ease-in-out infinite; }
+.ct-eq-bar-2 { animation: ct-eq-2 0.75s ease-in-out infinite; }
+.ct-eq-bar-3 { animation: ct-eq-3 1.1s ease-in-out infinite; }
+.ct-eq-bar-4 { animation: ct-eq-4 0.85s ease-in-out infinite; }

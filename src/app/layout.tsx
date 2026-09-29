@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "CortiTick – Pomodoro & Stress Tracker",
   description:
     "A Pomodoro timer combined with a todo list and a cortisol (stress) level gauge to help you stay focused and balanced.",
+  referrer: "strict-origin-when-cross-origin",
 };
 
 export default function RootLayout({
