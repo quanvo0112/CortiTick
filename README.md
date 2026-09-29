@@ -15,7 +15,7 @@
 
 <br/>
 
-![CortiTick Dashboard Preview](https://via.placeholder.com/900x500/1e1b4b/a78bfa?text=CortiTick+Dashboard)
+![CortiTick Dashboard Preview](./docs/cortitick-dashboard-preview.png)
 
 </div>
 
@@ -23,44 +23,42 @@
 
 ## 📖 Description
 
-**CortiTick** is a productivity web app that goes beyond a traditional Pomodoro timer. Most focus tools tell you *when* to work and *when* to break — but they ignore how your body actually feels in the process.
+**CortiTick** is a productivity web application reimagined as an authentic **Hardware Studio Console** (inspired by Dieter Rams Braun audio equipment and Teenage Engineering precision instruments). Beyond traditional Pomodoro timers, CortiTick integrates real-time physiological strain telemetry and continuous focus soundscapes into a unified, tactile desktop workspace.
 
-CortiTick introduces a **Cortisol Level Gauge**: a dynamic, real-time stress indicator that responds to your behavior throughout the session. Skip too many breaks, overload your task list, or push past your limits? Your cortisol gauge will show it. It's a visual nudge to help you work sustainably, not just productively.
-
-> **The problem it solves:** Burnout often sneaks up silently. CortiTick makes stress *visible* so you can act on it before it's too late.
+Most focus tools tell you *when* to work and *when* to break — but they ignore how your neurological and physiological state evolves. CortiTick introduces a **Physiological Cortisol Barometer**: a dynamic tension gauge that responds to continuous focus and rest intervals. When cognitive strain accumulates, CortiTick provides contextual neuro-recovery guidance (such as 4-7-8 parasympathetic breathing protocols) to sustain high performance without burnout.
 
 ---
 
 ## ✨ Features
 
-- **🍅 Pomodoro Timer**
-  - Configurable Work and Break session durations (1–120 min work, 1–60 min break)
-  - Smooth animated circular progress ring
-  - Auto-detection when a session ends, updating your stress level automatically
+- **⏱️ Master Session Chronometer**
+  - High-precision tabular countdown with ghost-backlit segment display (`88:88`)
+  - Configurable Work (1–120 min) and Rest (1–60 min) intervals with tactile `[-5M]` / `[+5M]` steppers
+  - Continuous linear **Chrono Ribbon** tracking progress across session milestones
+  - Direct integration with the Objective Flight Ledger to display active focus targets
 
-- **📋 Task Manager**
-  - Add, complete, and delete tasks on the fly
-  - Separate views for Pending and Completed tasks
-  - Adding tasks during a session nudges the cortisol level upward
+- **🧪 Physiological Cortisol Barometer**
+  - Clinical 12-segment illuminated LED tension ladder showing estimated biological load (0–100%)
+  - 4 distinct biological zones: *Homeostasis* (0–25%), *Optimal Flow* (25–60%), *Elevated Strain* (60–80%), *Exhaustion Threshold* (80–100%)
+  - Real-time clinical recovery recommendations and autonomic balance telemetry
 
-- **🧪 Dynamic Cortisol Gauge**
-  - A real-time semicircular gauge displaying your current estimated stress level (0–100%)
-  - Color-coded: 🟢 Low → 🟡 Normal → 🔴 High
-  - Reacts to: session completions, skipped breaks, and task load
+- ** Objective Flight Ledger**
+  - High-density, keyboard-first task entry (`Enter` to submit)
+  - Tactile mechanical switches with active target pinning (`SET TARGET`) to bind objectives directly to the active chronometer
+  - Separate views for All, Active, and Completed objectives with hover deletion
 
-- **⚙️ Customizable Settings**
-  - Adjust work and break durations at any time via the Settings modal
-  - Theme switcher: 🌙 Dark mode / ☀️ Light mode
+- **🎵 Focus Acoustic Deck & Tape Machine**
+  - **Tape Machine Mode**: Vintage-modern dual-spool cassette visualizer with animated spinning reels and real-time dual-channel stereo VU meters
+  - **Video Stage Mode**: 1-click toggle to expand the 16:9 YouTube video player with monitor bezels
+  - Master Tape Transport: Rewind 10s, Fast-Forward 10s, Play/Pause, Next/Previous, and precision volume gain
+  - **Saved Focus Queue**: Continuous sequential auto-advance across saved YouTube tracks, with Shuffle and Loop modes
+  - 4 Curated Studio Presets: Lofi Girl Study, Deep Focus Waves, Chill & Unwind, and Lofi Focus Playlist
 
-- **🎵 Focus Sound & YouTube Music Player**
-  - Add YouTube video or playlist links to play ambient / study music directly in the app
-  - Live display of currently playing YouTube video title, channel, and album art
-  - Auto-updating title for playlists as tracks advance, with Next/Previous track controls
-  - One-click focus presets (Lofi Girl, Deep Focus Alpha Waves, Ambient Beats, NCS Playlist)
-  - Toggleable video display window & saved links library (persisted across sessions)
-
-- **📱 Fully Responsive**
-  - Clean two-column dashboard layout on desktop, single-column stacked on mobile
+- **⌨️ Tactile Hardware Shortcuts**
+  - `[Space]`: Toggle Start / Pause interval
+  - `[R]`: Reset active session
+  - `[W]`: Switch to Deep Work mode
+  - `[B]`: Switch to Rest Recovery mode
 
 ---
 
