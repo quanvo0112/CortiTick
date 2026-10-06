@@ -124,6 +124,7 @@ export const useMusicStore = create<MusicStoreState>()(
         set((s) => ({
           currentTrack: { ...s.currentTrack, ...track },
           playlistIndex: 0,
+          playlistTotal: track.type?.includes("playlist") ? s.playlistTotal : 0,
           playbackMode: track.type?.includes("playlist") ? "playlist" : "single",
         })),
 
@@ -156,7 +157,7 @@ export const useMusicStore = create<MusicStoreState>()(
             id: `track-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
             addedAt: Date.now(),
           };
-          return { savedTracks: [newItem, ...s.savedTracks] };
+          return { savedTracks: [...s.savedTracks, newItem] };
         }),
 
       removeSavedTrack: (id) =>
@@ -183,6 +184,8 @@ export const useMusicStore = create<MusicStoreState>()(
         set({
           playbackMode: "library",
           libraryIndex: validIndex,
+          playlistIndex: 0,
+          playlistTotal: 0,
           currentTrack: {
             url: target.url,
             title: target.title,
@@ -217,7 +220,10 @@ export const useMusicStore = create<MusicStoreState>()(
 
         const nextTrack = savedTracks[nextIdx];
         set({
+          playbackMode: "library",
           libraryIndex: nextIdx,
+          playlistIndex: 0,
+          playlistTotal: 0,
           currentTrack: {
             url: nextTrack.url,
             title: nextTrack.title,
@@ -246,7 +252,10 @@ export const useMusicStore = create<MusicStoreState>()(
 
         const prevTrack = savedTracks[prevIdx];
         set({
+          playbackMode: "library",
           libraryIndex: prevIdx,
+          playlistIndex: 0,
+          playlistTotal: 0,
           currentTrack: {
             url: prevTrack.url,
             title: prevTrack.title,

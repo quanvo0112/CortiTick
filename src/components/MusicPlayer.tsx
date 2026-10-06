@@ -101,6 +101,33 @@ export function MusicPlayer() {
     }
   };
 
+  // Seamlessly load and play any track or playlist
+  const loadAndPlayTrack = (track: {
+    type: string;
+    playlistId?: string | null;
+    videoId?: string | null;
+  }) => {
+    if (!playerRef.current || !isPlayerReady) return;
+    try {
+      if (track.type.includes("playlist") && track.playlistId) {
+        playerRef.current.loadPlaylist({
+          list: track.playlistId,
+          listType: "playlist",
+          index: 0,
+        });
+        playerRef.current.setLoop?.(false);
+      } else if (track.videoId) {
+        playerRef.current.loadVideoById(track.videoId);
+      }
+      playerRef.current.playVideo();
+      setIsPlaying(true);
+      setTimeout(pullMetadataFromPlayer, 800);
+      setTimeout(pullMetadataFromPlayer, 2000);
+    } catch (err) {
+      console.error("Error loading and playing track", err);
+    }
+  };
+
   // Initialize YouTube Iframe Player
   useEffect(() => {
     let isCancelled = false;
@@ -127,6 +154,7 @@ export function MusicPlayer() {
             onReady: (event: any) => {
               setIsPlayerReady(true);
               try {
+                event.target.setLoop?.(false);
                 if (isMuted) {
                   event.target.mute();
                 } else {
@@ -141,6 +169,9 @@ export function MusicPlayer() {
               if (state === YT.PlayerState.PLAYING) {
                 setIsPlaying(true);
                 setIsBuffering(false);
+                try {
+                  playerRef.current?.setLoop?.(false);
+                } catch {}
                 pullMetadataFromPlayer();
                 setTimeout(pullMetadataFromPlayer, 600);
                 setTimeout(pullMetadataFromPlayer, 1500);
@@ -153,24 +184,71 @@ export function MusicPlayer() {
               } else if (state === YT.PlayerState.CUED) {
                 pullMetadataFromPlayer();
               } else if (state === YT.PlayerState.ENDED) {
+                const currentStore = useMusicStore.getState();
+                const player = playerRef.current;
+
+                // Inspect whether YouTube player is currently progressing through an internal playlist
+                let isMidPlaylist = false;
+                if (player) {
+                  try {
+                    const list = player.getPlaylist?.();
+                    const idx = player.getPlaylistIndex?.();
+
+                    const playlistLen =
+                      Array.isArray(list) && list.length > 0
+                        ? list.length
+                        : currentStore.playlistTotal;
+                    const currentIdx =
+                      typeof idx === "number" && idx >= 0
+                        ? idx
+                        : currentStore.playlistIndex;
+
+                    if (playlistLen > 1 && currentIdx >= 0 && currentIdx < playlistLen - 1) {
+                      // Intermediate video ended; YouTube will transition to the next video in this playlist
+                      isMidPlaylist = true;
+                      setPlaylistInfo(currentIdx + 1, playlistLen);
+                      setTimeout(pullMetadataFromPlayer, 800);
+                      setTimeout(pullMetadataFromPlayer, 2000);
+                    }
+                  } catch (e) {
+                    console.error("Error inspecting playlist state on ENDED", e);
+                  }
+                }
+
+                // If an intermediate video in the YouTube playlist finished, do NOT advance the queue
+                if (isMidPlaylist) {
+                  return;
+                }
+
+                // Single track OR the entire YouTube playlist has completed!
                 setIsPlaying(false);
 
-                // Auto-advance if playing the Saved Library queue
-                const currentStore = useMusicStore.getState();
+                // Auto-advance Saved Focus Queue
+                let shouldAdvance = false;
                 if (currentStore.playbackMode === "library" && currentStore.savedTracks.length > 0) {
-                  const nextTrack = currentStore.nextLibraryTrack();
+                  shouldAdvance = true;
+                } else if (currentStore.savedTracks.length > 0) {
+                  // Fallback: If finished track is in savedTracks, connect and advance queue
+                  const matchIdx = currentStore.savedTracks.findIndex(
+                    (t) =>
+                      t.url === currentStore.currentTrack.url ||
+                      (t.playlistId && t.playlistId === currentStore.currentTrack.playlistId) ||
+                      (t.videoId && t.videoId === currentStore.currentTrack.videoId)
+                  );
+                  if (matchIdx !== -1) {
+                    useMusicStore.setState({
+                      playbackMode: "library",
+                      libraryIndex: matchIdx,
+                    });
+                    shouldAdvance = true;
+                  }
+                }
+
+                if (shouldAdvance) {
+                  const updatedStore = useMusicStore.getState();
+                  const nextTrack = updatedStore.nextLibraryTrack();
                   if (nextTrack) {
-                    if (nextTrack.type.includes("playlist") && nextTrack.playlistId) {
-                      playerRef.current?.loadPlaylist?.({
-                        list: nextTrack.playlistId,
-                        listType: "playlist",
-                        index: 0,
-                      });
-                    } else if (nextTrack.videoId) {
-                      playerRef.current?.loadVideoById?.(nextTrack.videoId);
-                    }
-                    playerRef.current?.playVideo?.();
-                    setIsPlaying(true);
+                    loadAndPlayTrack(nextTrack);
                   }
                 }
               }
@@ -178,12 +256,33 @@ export function MusicPlayer() {
             onError: (event: any) => {
               setIsBuffering(false);
               setIsPlaying(false);
+              const store = useMusicStore.getState();
               if (event.data === 101 || event.data === 150) {
                 setApiError("Video restricts third-party playback (Error 150). Try another link or preset.");
               } else if (event.data === 100 || event.data === 2) {
                 setApiError("Video or playlist was not found or is private.");
               } else {
                 setApiError("Unable to stream video from YouTube.");
+              }
+
+              // If playing a playlist, attempt to skip to next video in playlist
+              if (playerRef.current) {
+                try {
+                  const list = playerRef.current.getPlaylist?.();
+                  const idx = playerRef.current.getPlaylistIndex?.();
+                  if (Array.isArray(list) && typeof idx === "number" && idx < list.length - 1) {
+                    playerRef.current.nextVideo?.();
+                    return;
+                  }
+                } catch {}
+              }
+
+              // If in library queue and track is unplayable, auto-advance after 2.5s
+              if (store.playbackMode === "library" && store.savedTracks.length > 1) {
+                setTimeout(() => {
+                  const next = store.nextLibraryTrack();
+                  if (next) loadAndPlayTrack(next);
+                }, 2500);
               }
             },
           },
@@ -249,6 +348,7 @@ export function MusicPlayer() {
             listType: "playlist",
             index: 0,
           });
+          playerRef.current.setLoop?.(false);
         } else if (parsed.videoId) {
           playerRef.current.loadVideoById(parsed.videoId);
         }
@@ -271,63 +371,58 @@ export function MusicPlayer() {
     if (!target) return;
 
     setApiError(null);
-    if (playerRef.current && isPlayerReady) {
-      try {
-        if (target.type.includes("playlist") && target.playlistId) {
-          playerRef.current.loadPlaylist({
-            list: target.playlistId,
-            listType: "playlist",
-            index: 0,
-          });
-        } else if (target.videoId) {
-          playerRef.current.loadVideoById(target.videoId);
-        }
-        playerRef.current.playVideo();
-        setIsPlaying(true);
-      } catch (err) {
-        console.error("Error playing library track", err);
-      }
-    }
+    loadAndPlayTrack(target);
   };
 
   // Next track in queue or playlist
   const handleNextTrack = () => {
     if (!playerRef.current || !isPlayerReady) return;
-    if (playbackMode === "library") {
+
+    // If currently inside a playlist, check if there are more tracks in this playlist
+    const playlist = playerRef.current.getPlaylist?.();
+    const currentIndex = playerRef.current.getPlaylistIndex?.();
+    const hasMoreInPlaylist =
+      Array.isArray(playlist) &&
+      typeof currentIndex === "number" &&
+      currentIndex >= 0 &&
+      currentIndex < playlist.length - 1;
+
+    if (hasMoreInPlaylist) {
+      playerRef.current.nextVideo?.();
+    } else if (playbackMode === "library" || savedTracks.length > 0) {
       const next = nextLibraryTrack();
       if (next) {
-        if (next.type.includes("playlist") && next.playlistId) {
-          playerRef.current.loadPlaylist({ list: next.playlistId, listType: "playlist", index: 0 });
-        } else if (next.videoId) {
-          playerRef.current.loadVideoById(next.videoId);
-        }
-        playerRef.current.playVideo();
-        setIsPlaying(true);
+        loadAndPlayTrack(next);
       }
     } else {
-      playerRef.current.nextVideo();
+      playerRef.current.nextVideo?.();
     }
     setTimeout(pullMetadataFromPlayer, 800);
+    setTimeout(pullMetadataFromPlayer, 2000);
   };
 
   // Previous track in queue or playlist
   const handlePreviousTrack = () => {
     if (!playerRef.current || !isPlayerReady) return;
-    if (playbackMode === "library") {
+
+    // If currently inside a playlist, check if we can go back within the playlist
+    const playlist = playerRef.current.getPlaylist?.();
+    const currentIndex = playerRef.current.getPlaylistIndex?.();
+    const canGoPrevInPlaylist =
+      Array.isArray(playlist) && typeof currentIndex === "number" && currentIndex > 0;
+
+    if (canGoPrevInPlaylist) {
+      playerRef.current.previousVideo?.();
+    } else if (playbackMode === "library" || savedTracks.length > 0) {
       const prev = prevLibraryTrack();
       if (prev) {
-        if (prev.type.includes("playlist") && prev.playlistId) {
-          playerRef.current.loadPlaylist({ list: prev.playlistId, listType: "playlist", index: 0 });
-        } else if (prev.videoId) {
-          playerRef.current.loadVideoById(prev.videoId);
-        }
-        playerRef.current.playVideo();
-        setIsPlaying(true);
+        loadAndPlayTrack(prev);
       }
     } else {
-      playerRef.current.previousVideo();
+      playerRef.current.previousVideo?.();
     }
     setTimeout(pullMetadataFromPlayer, 800);
+    setTimeout(pullMetadataFromPlayer, 2000);
   };
 
   // Seek +/- 10 seconds
@@ -373,9 +468,22 @@ export function MusicPlayer() {
       return;
     }
 
-    let title = currentTrack.url === targetUrl ? currentTrack.title : "YouTube Audio";
-    let author = currentTrack.url === targetUrl ? currentTrack.author : "YouTube";
-    let thumbnail = currentTrack.url === targetUrl ? currentTrack.thumbnail : getThumbnailUrl(parsed.videoId);
+    const isPlaylistTarget = parsed.type.includes("playlist");
+    let defaultTitle = isPlaylistTarget ? "YouTube Playlist" : "YouTube Audio";
+    let defaultAuthor = isPlaylistTarget ? "Curated Playlist" : "YouTube";
+
+    let title =
+      currentTrack.url === targetUrl && currentTrack.title && currentTrack.title !== "YouTube Audio"
+        ? currentTrack.title
+        : defaultTitle;
+    let author =
+      currentTrack.url === targetUrl && currentTrack.author && currentTrack.author !== "YouTube"
+        ? currentTrack.author
+        : defaultAuthor;
+    let thumbnail =
+      currentTrack.url === targetUrl && currentTrack.thumbnail
+        ? currentTrack.thumbnail
+        : getThumbnailUrl(parsed.videoId);
 
     try {
       const meta = await fetchYouTubeMetadata(targetUrl);
@@ -396,11 +504,23 @@ export function MusicPlayer() {
       thumbnail,
     });
 
+    // If the saved track is what's currently playing, link it directly to the library queue
+    const currentStore = useMusicStore.getState();
+    if (currentStore.currentTrack.url === targetUrl) {
+      const targetIdx = currentStore.savedTracks.findIndex((t) => t.url === targetUrl);
+      if (targetIdx !== -1) {
+        useMusicStore.setState({
+          playbackMode: "library",
+          libraryIndex: targetIdx,
+        });
+      }
+    }
+
     setInputUrl("");
   };
 
   const isCurrentPlaylist = currentTrack.type.includes("playlist");
-  const canGoNextOrPrev = playbackMode === "library" ? savedTracks.length > 1 : isCurrentPlaylist;
+  const canGoNextOrPrev = savedTracks.length > 1 || isCurrentPlaylist;
 
   return (
     <div className="flex flex-col gap-4">
@@ -423,9 +543,11 @@ export function MusicPlayer() {
             </div>
             <p className="text-[11px] truncate max-w-[200px] sm:max-w-xs" style={{ color: "var(--ct-muted)" }}>
               {playbackMode === "library"
-                ? `Library Queue • Track ${libraryIndex + 1}/${savedTracks.length}`
+                ? `Library Queue • Track ${libraryIndex + 1}/${savedTracks.length}${
+                    playlistTotal > 1 ? ` (Playlist ${playlistIndex + 1}/${playlistTotal})` : ""
+                  }`
                 : isCurrentPlaylist
-                ? "YouTube Continuous Stream"
+                ? `YouTube Continuous Stream${playlistTotal > 1 ? ` • ${playlistIndex + 1}/${playlistTotal}` : ""}`
                 : "Acoustic Focus Soundtrack"}
             </p>
           </div>
@@ -644,10 +766,11 @@ export function MusicPlayer() {
           {playbackMode === "library" ? (
             <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
               QUEUE #{libraryIndex + 1}
+              {playlistTotal > 1 ? ` • TRK ${playlistIndex + 1}/${playlistTotal}` : ""}
             </span>
           ) : isCurrentPlaylist ? (
             <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold uppercase">
-              PLAYLIST
+              PLAYLIST {playlistTotal > 1 ? `• TRK ${playlistIndex + 1}/${playlistTotal}` : ""}
             </span>
           ) : (
             <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-white/[0.05] text-slate-400 border border-white/[0.08] font-bold uppercase">
@@ -781,7 +904,7 @@ export function MusicPlayer() {
             placeholder="Paste YouTube track or playlist link..."
             value={inputUrl}
             onChange={(e) => setInputUrl(e.target.value)}
-            className="w-full rounded-xl pl-9 pr-7 py-2 text-xs outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
+            className="w-full rounded-xl pl-9 pr-24 py-2 text-xs outline-none focus:ring-1 focus:ring-amber-500 transition-colors"
             style={{
               background: "var(--ct-input-bg)",
               border: "1px solid var(--ct-input-bd)",
@@ -793,16 +916,43 @@ export function MusicPlayer() {
               <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
             </svg>
           </div>
-          {inputUrl && (
-            <button
-              type="button"
-              onClick={() => setInputUrl("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs hover:text-white"
-              style={{ color: "var(--ct-muted)" }}
-            >
-              ✕
-            </button>
-          )}
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            {detectedType && (
+              <span
+                className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border flex items-center gap-1 ${
+                  detectedType === "playlist"
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                    : "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                }`}
+              >
+                {detectedType === "playlist" ? (
+                  <>
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10m4-2v6m0 0l3-3m-3 3l-3-3" />
+                    </svg>
+                    Playlist
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    Track
+                  </>
+                )}
+              </span>
+            )}
+            {inputUrl && (
+              <button
+                type="button"
+                onClick={() => setInputUrl("")}
+                className="text-xs hover:text-white"
+                style={{ color: "var(--ct-muted)" }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         <button
@@ -876,14 +1026,27 @@ export function MusicPlayer() {
       {isLibraryOpen && (
         <div className="rounded-2xl p-3.5 bg-black/40 border border-white/[0.08] space-y-3 transition-all">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/[0.06]">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ct-text)]">
-                Focus Queue
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-bold">
-                {savedTracks.length} items
-              </span>
-            </div>
+            {(() => {
+              const playlistCount = savedTracks.filter((t) => t.type.includes("playlist") || !!t.playlistId).length;
+              const trackCount = savedTracks.length - playlistCount;
+              return (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ct-text)]">
+                    Focus Queue
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20">
+                    {savedTracks.length} items
+                  </span>
+                  {savedTracks.length > 0 && (
+                    <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+                      ({playlistCount > 0 ? `${playlistCount} playlist${playlistCount > 1 ? "s" : ""}` : ""}
+                      {playlistCount > 0 && trackCount > 0 ? " • " : ""}
+                      {trackCount > 0 ? `${trackCount} track${trackCount > 1 ? "s" : ""}` : ""})
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="flex items-center gap-1.5">
               {/* Play All Queue Trigger */}
@@ -928,16 +1091,18 @@ export function MusicPlayer() {
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
             {savedTracks.map((item, idx) => {
               const isCurrent = playbackMode === "library" && libraryIndex === idx;
+              const isItemPlaylist = item.type.includes("playlist") || !!item.playlistId;
+
               return (
                 <div
                   key={item.id}
                   className={`flex items-center justify-between gap-2.5 p-2 rounded-xl transition-all ct-btn ${
-                    isCurrent ? "bg-amber-500/15 border-amber-500/40 text-amber-300" : "bg-white/[0.02]"
+                    isCurrent ? "bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm" : "bg-white/[0.02]"
                   }`}
                 >
                   <button
                     onClick={() => handlePlaySavedLibrary(idx)}
-                    className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                    className="flex items-center gap-2.5 min-w-0 flex-1 text-left group"
                   >
                     <span className="w-4 text-[10px] font-mono text-slate-500 text-center flex-shrink-0">
                       {isCurrent && isPlaying ? (
@@ -946,21 +1111,59 @@ export function MusicPlayer() {
                         idx + 1
                       )}
                     </span>
-                    <img
-                      src={item.thumbnail || getThumbnailUrl(item.videoId)}
-                      alt={item.title}
-                      className="w-8 h-8 rounded-lg object-cover flex-shrink-0 bg-black/40"
-                    />
+
+                    {/* Thumbnail with Distinctive Playlist Badge Overlay */}
+                    <div
+                      className={`relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-black/40 border transition-transform group-hover:scale-105 ${
+                        isItemPlaylist ? "border-amber-500/50 shadow-sm" : "border-white/[0.08]"
+                      }`}
+                    >
+                      <img
+                        src={item.thumbnail || getThumbnailUrl(item.videoId)}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                      {isItemPlaylist && (
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent pt-1 pb-0.5 flex items-center justify-center gap-0.5 border-t border-amber-500/30">
+                          <svg className="w-2.5 h-2.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                          </svg>
+                          <span className="text-[7px] font-mono font-black text-amber-400 leading-none">LIST</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metadata & Explicit Type Pill */}
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold truncate">{item.title}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{item.author}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-semibold truncate flex-1">{item.title}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {isItemPlaylist ? (
+                          <span className="inline-flex items-center gap-1 text-[8.5px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 uppercase flex-shrink-0">
+                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10m4-2v6m0 0l3-3m-3 3l-3-3" />
+                            </svg>
+                            Playlist
+                            {isCurrent && playlistTotal > 1 ? ` (${playlistIndex + 1}/${playlistTotal})` : ""}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5 text-[8.5px] font-mono font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-300 border border-white/[0.1] uppercase flex-shrink-0">
+                            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                            Track
+                          </span>
+                        )}
+                        <span className="text-[10px] text-slate-400 truncate">{item.author || "YouTube"}</span>
+                      </div>
                     </div>
                   </button>
 
                   <button
                     onClick={() => removeSavedTrack(item.id)}
                     title="Remove from queue"
-                    className="p-1 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-white/[0.05] transition-colors"
                   >
                     ✕
                   </button>
